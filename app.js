@@ -154,6 +154,14 @@ async function startRandomChooser(membersList, client, event){
           },
           "action_id":"chooseADev",
           "value": membersListAsString
+          },
+                           {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Reset" 
+          },
+          "action_id":"reset"
           }
                            ]
             }
@@ -176,8 +184,13 @@ async function startRandomChooser(membersList, client, event){
   }
   
   app.action('chooseADev',async ({ack, body, client, value}) => {
-    client.views.p
+    
   });
   
   
 }
+
+// TODO a reset.
+app.action('reset', async ({ack, body, client}) => {
+  
+})
