@@ -31,32 +31,75 @@ var blocks = [
           },
           {
             "type": "divider"
-          },
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "This button won't do much for now. WIP"
-            }
-          },
-          {
-            "type": "actions",
-            "elements": [
-              {
-                "type": "button",
-                "text": {
-                  "type": "plain_text",
-                  "text": "Start the scrum!"
-                },
-                action_id: 'button1'
-              }
-            ]
           }
   ];
 
 app.event('app_home_opened', async ({ event, client, context }) => {
   try {
     
+    // List channels
+    var conversations = await client.conversations.list();
+    var channels = conversations.channels;
+    // create a button for every channel
+    var buttons = [];
+    
+    channels.forEach(channel => {
+      buttons.push({
+        "type": "button",
+        "text": {
+          "type": "plain_text",
+          "text": channel.name
+        },
+        "action_id":channel.id
+      });
+      
+      app.action(channel.id, async ({ack, body, client}) => {
+        ack();
+
+        try{
+
+          var test = {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "This button won't do much for now. WIP" + channel.name
+                  }
+                };
+
+          blocks.push(test);
+          await client.views.update({
+            // Pass the view_id
+            view_id: body.view.id,
+            // Pass the current hash to avoid race conditions
+            hash: body.view.hash,
+
+            /* the view object that appears in the app home*/
+            view: {
+              type: 'home',
+              callback_id: 'home_view',
+
+              /* body of the view */
+              blocks: blocks
+            }
+          });
+
+
+        } catch(error){
+          console.log(error);
+        }
+
+      });
+      
+      
+      
+    });
+    
+    
+    var buttonsLayout = {
+            "type": "actions",
+            "elements": buttons
+          };
+    blocks.push(buttonsLayout);
     
     /* view.publish is the method that your app uses to push a view to the Home tab */
     const result = await client.views.publish({
@@ -79,39 +122,3 @@ app.event('app_home_opened', async ({ event, client, context }) => {
   }
 });
 
-
-app.action('button1', async ({ack, body, client}) => {
-  ack();
-  
-  try{
-    var test = {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "This button won't do much for now. WIP"
-            }
-          };
-    
-    blocks.push(test);
-    await client.views.update({
-      // Pass the view_id
-      view_id: body.view.id,
-      // Pass the current hash to avoid race conditions
-      hash: body.view.hash,
-
-      /* the view object that appears in the app home*/
-      view: {
-        type: 'home',
-        callback_id: 'home_view',
-
-        /* body of the view */
-        blocks: blocks
-      }
-    });
-    
-    
-  } catch(error){
-    console.log(error);
-  }
-  
-});
