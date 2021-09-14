@@ -20,7 +20,9 @@ const app = new App({
   
 })();
 
-var blocks = [
+app.event('app_home_opened', async ({ event, client, context }) => {
+  
+  var blocks = [
           {
             "type": "section",
             "text": {
@@ -33,22 +35,23 @@ var blocks = [
             "type": "divider"
           }
   ];
-
-app.event('app_home_opened', async ({ event, client, context }) => {
+  
   try {
     
     // List channels
     var conversations = await client.conversations.list();
     var channels = conversations.channels;
+    
     // create a button for every channel
     var buttons = [];
     
     channels.forEach(channel => {
+      
       buttons.push({
         "type": "button",
         "text": {
           "type": "plain_text",
-          "text": channel.name
+          "text": channel.name 
         },
         "action_id":channel.id
       });
@@ -62,11 +65,12 @@ app.event('app_home_opened', async ({ event, client, context }) => {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "This button won't do much for now. WIP" + channel.name
+                    "text": channel.name
                   }
                 };
 
           blocks.push(test);
+          
           await client.views.update({
             // Pass the view_id
             view_id: body.view.id,
@@ -102,10 +106,15 @@ app.event('app_home_opened', async ({ event, client, context }) => {
     blocks.push(buttonsLayout);
     
     /* view.publish is the method that your app uses to push a view to the Home tab */
-    const result = await client.views.publish({
+    const result = await client.views.update({
 
       /* the user that opened your app's app home */
       user_id: event.user,
+      // Pass the view_id
+      view_id: client.view.id,
+      // Pass the current hash to avoid race conditions
+      hash: client.view.hash,
+
 
       /* the view object that appears in the app home*/
       view: {
@@ -122,3 +131,44 @@ app.event('app_home_opened', async ({ event, client, context }) => {
   }
 });
 
+async function startRandomChooser(membersList){
+  
+  var membersListAsString = "";
+  
+  membersList.forEach(member => {
+    membersListAsString += member.name + ","
+  })
+  
+  // Reset view for the random chooser
+  var view = {
+        type: 'home',
+        callback_id: 'home_view',
+
+        /* body of the view */
+        blocks: [{
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "the members of this channel are : " + membersListAsString       
+            }
+          },
+          {
+            "type": "divider"
+          },{
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "choose a dev." 
+          },
+          "action_id":"chooseADev",
+          "value": membersListAsString
+          }
+        ]
+      }
+  
+  app.action('chooseADev',async ({ack, body, client, value}) => {
+    console.log("value is" + value);
+  })
+  
+  
+}
