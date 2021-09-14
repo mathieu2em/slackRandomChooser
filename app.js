@@ -7,10 +7,8 @@ const app = new App({
 });
 
 
-
+var firstTime = false;
 // All the room in the world for your code
-
-
 
 (async (client) => {
   // Start your app
@@ -22,125 +20,117 @@ const app = new App({
 
 app.event('app_home_opened', async ({ event, client, context }) => {
   
-  var blocks = [
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "*Welcome to the Slack Random Chooser !!! yeahyeah * :tada: \n" +
-              "This app is still in development, but at term, the goal is to do the same thing as the random chooser application inside slack."
+  if(firstTime == false){
+    
+    firstTime = true;
+
+    var blocks = [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Welcome to the Slack Random Chooser !!! yeahyeah * :tada: \n" +
+                "This app is still in development, but at term, the goal is to do the same thing as the random chooser application inside slack."
+              }
+            },
+            {
+              "type": "divider"
             }
+    ];
+
+    try {
+
+      // List channels
+      var conversations = await client.conversations.list();
+      var channels = conversations.channels;
+
+      // create a button for every channel
+      var buttons = [];
+
+      channels.forEach(channel => {
+
+        buttons.push({
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": channel.name 
           },
-          {
-            "type": "divider"
+          "action_id":channel.id
+        });
+
+        app.action(channel.id, async ({ack, body, client}) => {
+          ack();
+
+          try{
+
+            var test = {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": channel.name
+                    }
+                  };
+            
+            var members = await client.conversations.members({channel : channel.id})
+
+            startRandomChooser(members.members, client, event);
+            
+            console.log("test");
+
+
+          } catch(error){
+            console.log(error);
           }
-  ];
-  
-  try {
-    
-    // List channels
-    var conversations = await client.conversations.list();
-    var channels = conversations.channels;
-    
-    // create a button for every channel
-    var buttons = [];
-    
-    channels.forEach(channel => {
-      
-      buttons.push({
-        "type": "button",
-        "text": {
-          "type": "plain_text",
-          "text": channel.name 
-        },
-        "action_id":channel.id
+
+        });
+
+
+
       });
-      
-      app.action(channel.id, async ({ack, body, client}) => {
-        ack();
-
-        try{
-
-          var test = {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": channel.name
-                  }
-                };
-
-          blocks.push(test);
-          
-          await client.views.update({
-            // Pass the view_id
-            view_id: body.view.id,
-            // Pass the current hash to avoid race conditions
-            hash: body.view.hash,
-
-            /* the view object that appears in the app home*/
-            view: {
-              type: 'home',
-              callback_id: 'home_view',
-
-              /* body of the view */
-              blocks: blocks
-            }
-          });
 
 
-        } catch(error){
-          console.log(error);
+      var buttonsLayout = {
+              "type": "actions",
+              "elements": buttons
+            };
+      blocks.push(buttonsLayout);
+
+      /* view.publish is the method that your app uses to push a view to the Home tab */
+      const result = await client.views.publish({
+
+        /* the user that opened your app's app home */
+        user_id: event.user,
+
+        /* the view object that appears in the app home*/
+        view: {
+          type: 'home',
+          callback_id: 'home_view',
+
+          /* body of the view */
+          blocks: blocks
         }
-
       });
-      
-      
-      
-    });
-    
-    
-    var buttonsLayout = {
-            "type": "actions",
-            "elements": buttons
-          };
-    blocks.push(buttonsLayout);
-    
-    /* view.publish is the method that your app uses to push a view to the Home tab */
-    const result = await client.views.update({
-
-      /* the user that opened your app's app home */
-      user_id: event.user,
-      // Pass the view_id
-      view_id: client.view.id,
-      // Pass the current hash to avoid race conditions
-      hash: client.view.hash,
-
-
-      /* the view object that appears in the app home*/
-      view: {
-        type: 'home',
-        callback_id: 'home_view',
-
-        /* body of the view */
-        blocks: blocks
-      }
-    });
-  }
-  catch (error) {
-    console.error(error);
+    }
+    catch (error) {
+      console.error(error);
+    }
   }
 });
 
-async function startRandomChooser(membersList){
+async function startRandomChooser(membersList, client, event){
   
   var membersListAsString = "";
   
-  membersList.forEach(member => {
+  var users = await client.users.list();
+  var members = users.members;
+  var channelMembers = members.filter(member =>  membersList.includes(member.id))
+  
+  channelMembers.forEach(member => {
     membersListAsString += member.name + ","
-  })
+  });
   
   // Reset view for the random chooser
-  var view = {
+  var view1 = {
         type: 'home',
         callback_id: 'home_view',
 
@@ -155,6 +145,8 @@ async function startRandomChooser(membersList){
           {
             "type": "divider"
           },{
+              "type": "actions",
+              "elements": [{
           "type": "button",
           "text": {
             "type": "plain_text",
@@ -163,12 +155,29 @@ async function startRandomChooser(membersList){
           "action_id":"chooseADev",
           "value": membersListAsString
           }
+                           ]
+            }
         ]
-      }
+      };
+  
+  try {
+  
+  /* view.publish is the method that your app uses to push a view to the Home tab */
+      const result = await client.views.publish({
+
+        /* the user that opened your app's app home */
+        user_id: event.user,
+
+        /* the view object that appears in the app home*/
+        view: view1
+      });
+  } catch (error) {
+    console.log(error);
+  }
   
   app.action('chooseADev',async ({ack, body, client, value}) => {
-    console.log("value is" + value);
-  })
+    client.views.p
+  });
   
   
 }
