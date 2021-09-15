@@ -18,7 +18,31 @@ var homeBase = [{
               "type": "divider"
             }];
 
+var randomChooserViewBase = [{
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "click on the button to add a new dev to the list!"  }
+            },
+            {
+              "type": "divider"
+            },{
+              "type": "actions",
+              "elements": [{
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "choose a dev." 
+                  },
+                  "action_id":"chooseADev",
+                  
+              }]}];
+
 var firstTime = false;
+
+var globalMembersList = [];
+var index = 0;
+
 // All the room in the world for your code
 
 (async (client) => {
@@ -124,8 +148,10 @@ async function startRandomChooser(membersList, client, event){
   var members = users.members;
   var channelMembers = members.filter(member =>  membersList.includes(member.id))
   
+  // Initialize the global variable containing the members list.
   channelMembers.forEach(member => {
-    membersListAsString += member.name + ","
+    membersListAsString += member.name + ",";
+    globalMembersList.push(member.name);
   });
   
   // Reset view for the random chooser
@@ -182,18 +208,61 @@ async function startRandomChooser(membersList, client, event){
     console.log(error);
   }
   
-  app.action('chooseADev',async ({ack, body, client, value}) => {
-    
+  
+  app.action('chooseADev',async ({ack, body, client}) => {
+    ack();
+
+    try {
+      
+      if(globalMembersList.length==0){
+        resetApp(ack, body, client);
+      } else {
+
+        let randomChooserView = randomChooserViewBase;
+        
+        let randomInt = Math.floor(Math.random()*globalMembersList.length);
+        
+        let member = globalMembersList[randomInt];
+        
+        var memberView = genMemberView(member);
+        
+        randomChooserView.push(memberView);
+        
+        globalMembersList.splice(randomInt, 1);
+
+        await client.views.update({
+          // Pass the view_id
+          view_id: body.view.id,
+          // Pass the current hash to avoid race conditions
+          hash: body.view.hash,
+          view: {
+            type: 'home',
+            callback_id: 'home_view',
+
+            /* body of the view */
+            blocks: randomChooserView
+          }    
+        })
+      }
+    } catch (error) {
+      console.log(error);
+    }
   });
   
   
 }
 
-// TODO a reset.
+// Resets every global variable of the app and return to first home view.
 app.action('reset', async ({ack, body, client}) => {
+  resetApp(ack, body, client);
+});
+
+async function resetApp(ack, body, client) {
   ack();
   
   firstTime = true;
+  globalMembersList = [];
+  index = 0;
   
   await client.views.update({
     // Pass the view_id
@@ -209,6 +278,16 @@ app.action('reset', async ({ack, body, client}) => {
           blocks: homeBase
         }
   });
-    
+}
+
+function genMemberView(member){
+  var memberView = { 
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": member
+              }
+  };
   
-})
+  return memberView;
+}
