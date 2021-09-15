@@ -217,7 +217,7 @@ async function startRandomChooser(membersList, client, event){
           "type": "button",
           "text": {
             "type": "plain_text",
-            "text": "Reset" 
+            "text": "Back" 
           },
           "action_id":"reset"
           }
@@ -259,6 +259,16 @@ async function startRandomChooser(membersList, client, event){
         
         var memberView = genMemberView(member);
         
+        // TODO add the list of members still to talk.
+        /*
+        var membersLeft = "";
+        
+        globalMembersList.forEach(member => {
+          membersLeft += member.real_name;
+        });
+        
+        membersLeftView = genMembersLeftView()
+        */
         randomChooserView.push(memberView);
         
         globalMembersList.splice(randomInt, 1);
