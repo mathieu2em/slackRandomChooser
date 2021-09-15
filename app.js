@@ -6,6 +6,17 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
+var homeBase = [{
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "*Welcome to the Slack Random Chooser !!! yeah * :tada: \n" +
+                "This app is still in development, but at term, the goal is to do the same thing as the random chooser application inside slack."
+              }
+            },
+            {
+              "type": "divider"
+            }];
 
 var firstTime = false;
 // All the room in the world for your code
@@ -24,19 +35,7 @@ app.event('app_home_opened', async ({ event, client, context }) => {
     
     firstTime = true;
 
-    var blocks = [
-            {
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": "*Welcome to the Slack Random Chooser !!! yeahyeah * :tada: \n" +
-                "This app is still in development, but at term, the goal is to do the same thing as the random chooser application inside slack."
-              }
-            },
-            {
-              "type": "divider"
-            }
-    ];
+    var blocks = homeBase;
 
     try {
 
@@ -192,5 +191,24 @@ async function startRandomChooser(membersList, client, event){
 
 // TODO a reset.
 app.action('reset', async ({ack, body, client}) => {
+  ack();
+  
+  firstTime = true;
+  
+  await client.views.update({
+    // Pass the view_id
+    view_id: body.view.id,
+    // Pass the current hash to avoid race conditions
+    hash: body.view.hash,
+    
+    view: {
+          type: 'home',
+          callback_id: 'home_view',
+
+          /* body of the view */
+          blocks: homeBase
+        }
+  });
+    
   
 })
