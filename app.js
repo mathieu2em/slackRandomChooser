@@ -146,12 +146,12 @@ async function startRandomChooser(membersList, client, event){
   
   var users = await client.users.list();
   var members = users.members;
-  var channelMembers = members.filter(member =>  membersList.includes(member.id))
+  var channelMembers = members.filter(member =>  membersList.includes(member.id) && !member.is_bot)
   
   // Initialize the global variable containing the members list.
   channelMembers.forEach(member => {
     membersListAsString += member.name + ",";
-    globalMembersList.push(member.name);
+    globalMembersList.push(member);
   });
   
   // Reset view for the random chooser
@@ -281,13 +281,19 @@ async function resetApp(ack, body, client) {
 }
 
 function genMemberView(member){
-  var memberView = { 
-              "type": "section",
-              "text": {
-                "type": "mrkdwn",
-                "text": member
-              }
-  };
+  
+  var memberView = {
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": member.real_name
+			},
+			"accessory": {
+				"type": "image",
+				"image_url": member.profile.image_512,
+        "alt_text": "the user image"
+			}
+		}
   
   return memberView;
 }
