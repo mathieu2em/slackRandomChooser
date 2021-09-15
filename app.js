@@ -218,7 +218,7 @@ async function startRandomChooser(membersList, client, event){
         resetApp(ack, body, client);
       } else {
 
-        let randomChooserView = randomChooserViewBase;
+        let randomChooserView = randomChooserViewBase.slice();
         
         let randomInt = Math.floor(Math.random()*globalMembersList.length);
         
