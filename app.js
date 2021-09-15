@@ -241,7 +241,7 @@ async function startRandomChooser(membersList, client, event){
     console.log(error);
   }
   
-  
+}  
   app.action('chooseADev',async ({ack, body, client}) => {
     ack();
 
@@ -293,7 +293,7 @@ async function startRandomChooser(membersList, client, event){
   });
   
   
-}
+
 
 // Resets every global variable of the app and return to first home view.
 app.action('reset', async ({ack, body, client}) => {
@@ -303,7 +303,7 @@ app.action('reset', async ({ack, body, client}) => {
 async function resetApp(ack, body, client) {
   ack();
   
-  firstTime = true;
+  //firstTime = true;
   globalMembersList = [];
   index = 0;
   
