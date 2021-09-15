@@ -6,53 +6,86 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
 
+// The base view for the home page.
 var homeBase = [{
               "type": "section",
               "text": {
                 "type": "mrkdwn",
                 "text": "*Welcome to the Slack Random Chooser !!! yeah * :tada: \n" +
-                "This app is still in development, but at term, the goal is to do the same thing as the random chooser application inside slack."
+                "Select the channel from which you want to select users randomly to talk during the scrum."
               }
             },
             {
               "type": "divider"
             }];
 
+// The base view for the random chooser page.
 var randomChooserViewBase = [{
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "click on the button to add a new dev to the list!"  }
+                "text": "click on the button to randomly select the next person to talk!"  }
             },
             {
               "type": "divider"
-            },{
+            },
+                             
+                             {
               "type": "actions",
               "elements": [{
                   "type": "button",
                   "text": {
                     "type": "plain_text",
-                    "text": "choose a dev." 
+                    "text": "Next!" 
                   },
                   "action_id":"chooseADev",
                   
               }]}];
 
+var everybodyTalkedView = [{
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "everybody talked!! Congratulations!!"  } 
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "type": "image",
+              "title": {
+                "type": "plain_text",
+                "text": "congratz!",
+                "emoji": true
+              },
+              "image_url": "https://www.lollydaskal.com/wp-content/uploads/2018/01/celebrating-success-picture-id541976048.jpeg",
+              "alt_text": "happy team"
+                           },
+                           {
+              "type": "actions",
+              "elements": [{
+                  "type": "button",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "finish" 
+                  },
+                  "action_id":"reset",
+                  
+              }]}];
+// Used to enable app actions initialization.
 var firstTime = false;
 
 var globalMembersList = [];
 var index = 0;
 
-// All the room in the world for your code
-
+// Start the app.
 (async (client) => {
-  // Start your app
   await app.start(process.env.PORT || 3000);
 
-  console.log('⚡️ Bolt app is running!');
-  
+  console.log('⚡️ Bolt app is running!');  
 })();
 
+// When a user open the app home page.
 app.event('app_home_opened', async ({ event, client, context }) => {
   
   if(firstTime == false){
@@ -150,7 +183,7 @@ async function startRandomChooser(membersList, client, event){
   
   // Initialize the global variable containing the members list.
   channelMembers.forEach(member => {
-    membersListAsString += member.name + ",";
+    membersListAsString += member.real_name + ", ";
     globalMembersList.push(member);
   });
   
@@ -215,7 +248,7 @@ async function startRandomChooser(membersList, client, event){
     try {
       
       if(globalMembersList.length==0){
-        resetApp(ack, body, client);
+        everybodyTalked(ack, body, client);
       } else {
 
         let randomChooserView = randomChooserViewBase.slice();
@@ -277,6 +310,25 @@ async function resetApp(ack, body, client) {
           /* body of the view */
           blocks: homeBase
         }
+  });
+}
+
+async function everybodyTalked(ack, body, client) {
+  ack();
+  
+  await client.views.update({
+    // Pass the view_id
+    view_id: body.view.id,
+    // Pass the current hash to avoid race conditions
+    hash: body.view.hash,
+    
+    view: {
+          type: 'home',
+          callback_id: 'home_view',
+
+          /* body of the view */
+          blocks: everybodyTalkedView
+        } 
   });
 }
 
