@@ -307,20 +307,24 @@ async function resetApp(ack, body, client) {
   globalMembersList = [];
   index = 0;
   
-  await client.views.update({
-    // Pass the view_id
-    view_id: body.view.id,
-    // Pass the current hash to avoid race conditions
-    hash: body.view.hash,
-    
-    view: {
-          type: 'home',
-          callback_id: 'home_view',
+  try {
+    await client.views.update({
+      // Pass the view_id
+      view_id: body.view.id,
+      // Pass the current hash to avoid race conditions
+      hash: body.view.hash,
 
-          /* body of the view */
-          blocks: homeBase
-        }
-  });
+      view: {
+            type: 'home',
+            callback_id: 'home_view',
+
+            /* body of the view */
+            blocks: homeBase
+          }
+    });
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 async function everybodyTalked(ack, body, client) {
